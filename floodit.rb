@@ -1,5 +1,5 @@
 class Cell
-  attr_accessor :point, :color, :owned
+  attr_accessor :point, :color
   def initialize
     @point=Point.new(0,0)
     @color=Grid::NULLCOLOR
@@ -8,55 +8,89 @@ class Cell
   def to_s
     color
   end 
+  
+  def owned?
+    @owned
+  end 
+  def owned=(o)
+    @owned=(o)
+  end 
   def owned
-    @owned ? "+" : "-"
+    owned? ? "+" : "-"
   end 
 end 
 
 class Grid
 	XDIM=5
-  YDIM=17
+  YDIM=11
   COLORS=%w(% $ ! @ & *)
   NULLCOLOR='~'
   
   def get_adjacents(point)
-   # self[point.x,point.y]
+    #point= self[point].point
     r=[]
-    r << Point.new(point.x,point.y-1)  # to the up 
-    r << Point.new(point.x+1,point.y)  # to the right 
-    r << Point.new(point.x,point.y+1)  # to the down 
-    r << Point.new(point.x-1,point.y)  # to the left
+    r << self[point.x,point.y-1]  # to the up 
+    r << self[point.x+1,point.y]  # to the right 
+    r << self[point.x,point.y+1]  # to the down 
+    r << self[point.x-1,point.y]  # to the left
+    r
     #returns an array of up to 4 points that are adjacent to this one
   end 
 
-  def get_owned_points(*args)
-    color=NULLCOLOR
-    point_set=[]
-    @starting_point= if args.empty? 
-      Point.new(0,0)
-    elsif args.first.kind_of? Point
-      args.first
-    elsif args.size > 1
-      Point.new(args[0],args[1])
+  def owned_cells
+    owned=[]
+    all_grid do |cell,x,y|
+      owned << cell if cell.owned? 
+      cell      #remember the all_grid method assigns whatever is the outcome of this block back to the original cell
     end 
-    point_set << @starting_point
-    @starting_point_color=self[@starting_point].color
-
-    adjs = get_adjacents(@starting_point).compact
-    adjs.each do |adj_point|
-      if self[adj_point].color == @starting_point_color then 
-        if !self[adj_point].owned  
-          self[adj_point].owned=true
-          ops = get_owned_points(adj_point) 
-          point_set += ops
-        end 
-        #ops.reject!{|p| p==@starting_point }
-      end   
-    end 
-    
-    point_set
-    #returns an array? of points in the grid that the player "owns" 
+    owned
   end 
+
+  def change_color(color)
+    return unless COLORS.include? color
+    point_set=[]
+    owned=owned_cells
+    owned.each do |cell|
+      cell.color=color
+    end 
+  end 
+  
+  def flood
+    start_at = self[0,0]
+    
+  end     
+
+    
+    #cell= self[ args ] ||  self[ 0 , 0]
+    #@starting_point=cell.point
+    #point_set << @starting_point
+
+    #adjs = get_adjacents(@starting_point).compact
+
+    
+
+#puts "***"
+#puts adjs.inspect
+#puts "***"
+
+
+    #adjs.each do |adj_cell|
+    
+      #if adj_cell.color == @starting_point.color then 
+        #if !adj_cell.owned?  
+          #adj_cell.owned=true
+          #ops = get_owned_cells(adj_cell).reject!{|cell| cell.owned } 
+          #point_set += ops
+        #else #it's a cell we already own so we need to explore its adjacents
+          
+        #end 
+        ##ops.reject!{|p| p==@starting_point }
+      #end   
+    #end 
+    
+    #point_set
+    ##returns an array? of points in the grid that the player "owns" 
+  #end 
 
   def last_color
     @last_color ||= @color_grid[0][0]
@@ -78,10 +112,14 @@ class Grid
   end 
 
   def [](*args)
-    if args.first.kind_of? Point
+    if args.nil? 
+      nil
+    elsif args.first.kind_of? Point
       @color_grid[args.first.x][args.first.y] rescue nil
     elsif args.size > 1
-      @color_grid[args[0]][args[1]] rescue nil
+      (args[1] < 0 || args[0] < 0 ) ? nil :   @color_grid[args[0]][args[1]] 
+    else
+      nil
     end 
   end 
 
@@ -159,7 +197,9 @@ class Point
   def y
     @y
   end 
-  
+  def to_s
+    "#{@x},#{@y}"
+  end 
   def ==(p)
     p.kind_of?( self.class ) ? (p.x==self.x && p.y==self.y) : false   
   end 
@@ -201,16 +241,16 @@ class RunGame
   
     print "Enter a color: " 
     c=gets
-    @area.choose_color(c)
-
-@game_grid.all_grid do |g,x,y|  
-  puts " #{x} #{y} #{g} " + @game_grid.get_adjacents(Point.new(x,y)).inspect
-  g 
-end 
+    @game_grid.change_color c
+#@game_grid.all_grid do |g,x,y|  
+  #puts " #{x} #{y} #{g} " + @game_grid.get_adjacents(g.point).inspect
+  #puts "the point as it says it is: "+g.point.to_s
+  #g 
+#end 
     
     
     puts "owned points: "
-    puts @game_grid.get_owned_points.inspect 
+    puts @game_grid.owned_cells.inspect 
     
     
     end 
