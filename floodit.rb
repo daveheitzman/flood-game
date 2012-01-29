@@ -1,9 +1,11 @@
 class Cell
-  attr_accessor :point, :color
+  attr_accessor :point, :color, :flooded
+  
   def initialize
     @point=Point.new(0,0)
     @color=Grid::NULLCOLOR
     @owned=false
+    @flooded=false
   end 
   def to_s
     color
@@ -26,14 +28,15 @@ class Grid
   COLORS=%w(% $ ! @ & *)
   NULLCOLOR='~'
   
-  def get_adjacents(point)
+  def get_adjacents(point_or_cell)
+    point = point_or_cell.kind_of?(Cell) ? point_or_cell.point :  point_or_cell 
     #point= self[point].point
     r=[]
     r << self[point.x,point.y-1]  # to the up 
     r << self[point.x+1,point.y]  # to the right 
     r << self[point.x,point.y+1]  # to the down 
     r << self[point.x-1,point.y]  # to the left
-    r
+    r.compact
     #returns an array of up to 4 points that are adjacent to this one
   end 
 
@@ -53,10 +56,30 @@ class Grid
     owned.each do |cell|
       self[cell.point].color=color
     end 
+    all_grid do |cell,x,y|
+      cell.flooded=false 
+      cell      #remember the all_grid method assigns whatever is the outcome of this block back to the original cell
+    end 
+
   end 
   
-  def flood
-    start_at = self[0,0]
+  def flood(caller=nil, start_at=nil)
+    start_at = start_at || self[0,0]
+    start_at.owned=true
+    start_at.flooded=true
+    #adjs=start_at.get_adjacents
+    get_adjacents(start_at).each do |adj_cell|
+puts "cell: #{adj_cell} caller: #{caller}"
+puts "#{adj_cell==caller}"
+      next if adj_cell==caller
+      next if adj_cell.flooded
+      if adj_cell.color == start_at.color 
+puts "b4 flood "
+puts "cell: #{adj_cell} caller: #{caller}"
+puts "#{adj_cell==caller}"
+          flood(start_at,adj_cell)
+      end 
+    end 
     
   end     
 
@@ -117,7 +140,7 @@ class Grid
     elsif args.first.kind_of? Point
       @color_grid[args.first.x][args.first.y] rescue nil
     elsif args.size > 1
-      (args[1] < 0 || args[0] < 0 ) ? nil :   @color_grid[args[0]][args[1]] 
+      ( (args[1] < 0 || args[0] < 0 ) ? nil :   @color_grid[args[0]][args[1]] ) rescue nil  
     else
       nil
     end 
@@ -235,13 +258,17 @@ class RunGame
   end 
 
   def game_loop
+    @game_grid.flood
+
     loop do
     @game_grid.draw
     @game_grid.draw(:owned)
-  
+
+    
     print "Enter a color: " 
     c=gets
-    @game_grid.change_color c
+    @game_grid.change_color c.chomp
+    @game_grid.flood
 #@game_grid.all_grid do |g,x,y|  
   #puts " #{x} #{y} #{g} " + @game_grid.get_adjacents(g.point).inspect
   #puts "the point as it says it is: "+g.point.to_s
