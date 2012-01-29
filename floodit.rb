@@ -51,7 +51,7 @@ class Grid
     point_set=[]
     owned=owned_cells
     owned.each do |cell|
-      cell.color=color
+      self[cell.point].color=color
     end 
   end 
   
