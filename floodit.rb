@@ -13,7 +13,11 @@ class Grid
        @grid[i] = Array.new(YDIM,'~') 
     end    
   end 
-  
+
+  def [](x,y)
+    @grid[x][y]
+  end 
+
   def all_grid(&block) 
     XDIM.times do |x|
       YDIM.times do |y|
@@ -33,6 +37,7 @@ class Grid
   
   def choose_color(c)
     return if !COLORS.include? c
+    
   end 
   
   def draw
@@ -77,7 +82,21 @@ class Grid
 
 end 
 
+class Point < Array
+  
+  def initialize
+    self << 0
+    self << 0
+  end 
+end 
+
 class Area
+  
+  def initialize(game_grid) 
+    @points = [Point.new]
+    @color = game_grid[0,0]
+  end 
+  
 end 
 
 class RunGame
@@ -85,6 +104,7 @@ class RunGame
   def initialize
     @game_grid=Grid.new
     @game_grid.reset_grid
+    @area=Area.new(@game_grid)
   end 
 
   def game_loop
@@ -92,7 +112,7 @@ class RunGame
     print "Enter a color: " 
     c=gets
     @game_grid.choose_color(c)
-    @game_grid.reset_grid
+#    @game_grid.reset_grid
     @game_grid.draw
     end 
 
