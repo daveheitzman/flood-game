@@ -2,11 +2,37 @@ class Grid
 	XDIM=17
   YDIM=17
   COLORS=%w(% $ ! @ & *)
+
+  def last_color
+    @last_color ||= @grid[0][0]
+  end 
   
   def initialize
-    line = Array.new(XDIM,COLORS[0])
-    @grid=Array.new(YDIM,line)
-    draw
+    @grid=Array.new(XDIM,[])
+    @grid.each_index do |i|
+       @grid[i] = Array.new(YDIM,'~') 
+    end    
+  end 
+  
+  def all_grid(&block) 
+    XDIM.times do |x|
+      YDIM.times do |y|
+        #@grid[x][y]=block.call(@grid[x][y],x,y)
+        @grid[x][y]=COLORS.shuffle.last
+      end 
+    end 
+    
+  end 
+  
+  def reset_grid
+    all_grid do |i,x,y|
+      i=String.new COLORS.shuffle.last
+      i
+    end 
+  end 
+  
+  def choose_color(c)
+    return if !COLORS.include? c
   end 
   
   def draw
@@ -18,6 +44,9 @@ class Grid
     right_border= "|"
     corner="+"
     item_space=" "
+    
+    ############################# begin drawing 
+    puts "Available colors: " + COLORS.inspect
     print top_margin
     print left_margin+corner
     XDIM.times do |x|
@@ -51,6 +80,25 @@ end
 class Area
 end 
 
+class RunGame
 
+  def initialize
+    @game_grid=Grid.new
+    @game_grid.reset_grid
+  end 
 
-Grid.new
+  def game_loop
+    loop do
+    print "Enter a color: " 
+    c=gets
+    @game_grid.choose_color(c)
+    @game_grid.reset_grid
+    @game_grid.draw
+    end 
+
+  end 
+
+end 
+
+rg=RunGame.new
+rg.game_loop
