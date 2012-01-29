@@ -1,7 +1,17 @@
 class Grid
-	XDIM=17
+	XDIM=5
   YDIM=17
   COLORS=%w(% $ ! @ & *)
+
+  def get_adjacents(point)
+    self[point.x,point.y]
+    r=[]
+    r << self[point.x,point.y-1] || nil # to the up 
+    r << self[point.x+1,point.y] || nil # to the right 
+    r << self[point.x,point.y+1] || nil # to the down 
+    r << self[point.x-1,point.y] || nil # to the left 
+    #returns an array of up to 4 points that are adjacent to this one
+  end 
 
   def last_color
     @last_color ||= @grid[0][0]
@@ -15,14 +25,13 @@ class Grid
   end 
 
   def [](x,y)
-    @grid[x][y]
+    @grid[x][y] rescue nil
   end 
 
   def all_grid(&block) 
     XDIM.times do |x|
       YDIM.times do |y|
-        #@grid[x][y]=block.call(@grid[x][y],x,y)
-        @grid[x][y]=COLORS.shuffle.last
+        @grid[x][y]=block.call(@grid[x][y],x,y)
       end 
     end 
     
@@ -30,7 +39,7 @@ class Grid
   
   def reset_grid
     all_grid do |i,x,y|
-      i=String.new COLORS.shuffle.last
+      i=COLORS.shuffle.last
       i
     end 
   end 
@@ -60,10 +69,10 @@ class Grid
     print corner
     print right_margin
     print "\n"
-    XDIM.times do |x|
+    YDIM.times do |y|
       print left_margin+left_border
-      YDIM.times do |y|
-        print item_space + @grid[x][y] + item_space
+      XDIM.times do |x|
+        print item_space + self[x,y] + item_space
       end 
       print right_border+right_margin
       puts
@@ -82,11 +91,17 @@ class Grid
 
 end 
 
-class Point < Array
+class Point 
+  def x
+    @x
+  end 
+  def y
+    @y
+  end 
   
-  def initialize
-    self << 0
-    self << 0
+  def initialize(x=nil,y=nil)
+    @x = x || 0; 
+    @y = y || 0
   end 
 end 
 
@@ -95,6 +110,13 @@ class Area
   def initialize(game_grid) 
     @points = [Point.new]
     @color = game_grid[0,0]
+    @grid = game_grid
+  end 
+  
+  def choose_color(color)
+    @points.each do |point|
+    
+    end 
   end 
   
 end 
@@ -111,8 +133,14 @@ class RunGame
     loop do
     print "Enter a color: " 
     c=gets
-    @game_grid.choose_color(c)
-#    @game_grid.reset_grid
+    @area.choose_color(c)
+#   @game_grid.reset_grid
+
+    @game_grid.all_grid do |g,x,y|  
+      puts " #{x} #{y} #{g} " + @game_grid.get_adjacents(Point.new(x,y)).inspect
+      g 
+    end 
+    
     @game_grid.draw
     end 
 
