@@ -8,6 +8,9 @@ class Cell
   def to_s
     color
   end 
+  def owned
+    @owned ? "+" : "-"
+  end 
 end 
 
 class Grid
@@ -42,9 +45,11 @@ class Grid
     adjs = get_adjacents(@starting_point).compact
     adjs.each do |adj_point|
       if self[adj_point].color == @starting_point_color then 
-        self[adj_point].owned = true 
-        ops = get_owned_points(adj_point) 
-        point_set += ops
+        if !self[adj_point].owned  
+          self[adj_point].owned=true
+          ops = get_owned_points(adj_point) 
+          point_set += ops
+        end 
         #ops.reject!{|p| p==@starting_point }
       end   
     end 
@@ -105,7 +110,7 @@ class Grid
     
   end 
   
-  def draw
+  def draw(disp_type=:color)
     left_margin="   "
     right_margin="   "
     top_margin="\n"
@@ -128,7 +133,7 @@ class Grid
     YDIM.times do |y|
       print left_margin+left_border
       XDIM.times do |x|
-        print item_space + self[x,y].to_s + item_space
+        print item_space + self[x,y].send(disp_type).to_s + item_space
       end 
       print right_border+right_margin
       puts
@@ -192,6 +197,7 @@ class RunGame
   def game_loop
     loop do
     @game_grid.draw
+    @game_grid.draw(:owned)
   
     print "Enter a color: " 
     c=gets
