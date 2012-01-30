@@ -231,11 +231,11 @@ class RunGame
 
     loop do
       @last_color=@game_grid.owned_cells.first.color
-      
+      puts
       #info line:
-      print "Owned: #{@game_grid.owned_cells.size} / #{Grid::XDIM*Grid::YDIM} | "  
+      print "Owned: #{@game_grid.owned_cells.size}/#{Grid::XDIM*Grid::YDIM} | "  
       print "Turns: #{@turns_taken} | "
-      puts;puts
+      puts
       @game_grid.draw
   #    @game_grid.draw(:owned)
    
