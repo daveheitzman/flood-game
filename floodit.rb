@@ -31,13 +31,16 @@ class Grid
   COLORS=%w(% $ ! @ & *)
   NULLCOLOR='~'
   
-  COLOR_HEX={'%'=>sprintf("#%0.6x",(2**23)+rand(2**23)), 
-    '$'=>sprintf("#%0.6x",(2**23)+rand(2**23)),
-    '!'=> sprintf("#%0.6x",(2**23)+rand(2**23)) ,
-    '@'=> sprintf("#%0.6x",(2**23)+rand(2**23)), 
-    '&' => sprintf("#%0.6x",(2**23)+rand(2**23)),
-    '*' =>sprintf("#%0.6x",(2**23)+rand(2**23)),
-    '~' =>sprintf("#%0.6x",(2**23)+rand(2**23))}
+  
+  @@rand=Random.new( 1 )
+  
+  COLOR_HEX={'%'=>sprintf("#%0.6x",(2**23)+@@rand.rand(2**23) ) , 
+    '$'=>sprintf("#%0.6x",(2**23)+@@rand.rand(2**23) ),
+    '!'=> sprintf("#%0.6x",(2**23)+@@rand.rand(2**23) ),
+    '@'=> sprintf("#%0.6x",(2**23)+@@rand.rand(2**23) ), 
+    '&' => sprintf("#%0.6x",(2**23)+@@rand.rand(2**23) ),
+    '*' =>sprintf("#%0.6x",(2**23)+@@rand.rand(2**23) ),
+    '~' =>sprintf("#%0.6x",(2**23)+@@rand.rand(2**23) )}
 
   def get_adjacents(point_or_cell)
     point = point_or_cell.kind_of?(Cell) ? point_or_cell.point :  point_or_cell 
@@ -102,6 +105,7 @@ class Grid
   end 
   
   def initialize(xdim=XDIM,ydim=YDIM)
+  @@rand=Random.new(1)
     @starting_point_color = NULLCOLOR
     @starting_point = Point.new
     @color_grid = new_grid(xdim,ydim)
@@ -140,7 +144,7 @@ class Grid
   def reset_grid
     all_grid do |i,x,y|
       i=Cell.new
-      i.color=COLORS.shuffle.last
+      i.color=COLORS[@@rand.rand(COLORS.size)]
       i.point=Point.new(x,y)
       i.owned=false
       i
@@ -221,7 +225,6 @@ class RunGame
   def initialize
     @game_grid=Grid.new
     @game_grid.reset_grid
-    Kernel.srand(1)
     @last_color=''
     @turns_taken=0
   end 
