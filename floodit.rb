@@ -1,6 +1,5 @@
 require 'rainbow'
 
-
 class Cell
   attr_accessor :point, :color, :flooded
   
@@ -259,6 +258,7 @@ class RunGame
 
   def initialize
     @game_grid ||= Grid.new
+    @computer_player_stats={}
     new_game
   end 
 
@@ -276,25 +276,23 @@ class RunGame
 
     while(!@game_finished) do
       @last_color=@game_grid.owned_cells.first.color
-      puts
-      #info line:
-      print "Owned: #{@game_grid.owned_cells.size}/#{Grid::XDIM*Grid::YDIM} | "  
-      print "Turns: #{@turns_taken} | "
       pconvs=@game_grid.possible_conversions
-      ava=Grid::COLORS
-      print ava.map{|e| e.to_s.color(Grid::COLOR_HEX[e]) + ":" + pconvs[e].to_s }.join("  ")
 
-      puts
-      @game_grid.draw
-  #    @game_grid.draw(:owned)
-   
-      ava=Grid::COLORS
-      puts "Available colors: " + ava.map{|e| e.to_s.color(Grid::COLOR_HEX[e])}.join(", ")
-      print("Enter a color:".color('#EFC238'))
-      if @computer_player
-        c=choose_move(pconvs)
-      else 
+      if !@computer_player
+        puts
+        #info line:
+        print "Owned: #{@game_grid.owned_cells.size}/#{Grid::XDIM*Grid::YDIM} | "  
+        print "Turns: #{@turns_taken} | "
+        ava=Grid::COLORS
+        print ava.map{|e| e.to_s.color(Grid::COLOR_HEX[e]) + ":" + pconvs[e].to_s }.join("  ")
+        puts
+        @game_grid.draw
+        ava=Grid::COLORS
+        puts "Available colors: " + ava.map{|e| e.to_s.color(Grid::COLOR_HEX[e])}.join(", ")
+        print("Enter a color:".color('#EFC238'))
         c=gets
+      else
+        c=choose_move(pconvs)
       end 
       
       @game_grid.change_color c.chomp
@@ -303,8 +301,28 @@ class RunGame
       @game_finished = @game_grid.owned_cells.size==Grid::XDIM*Grid::YDIM
     
     end 
+    if @computer_player
+      @computer_player_stats[:highest] ||=0
+      
+      @computer_player_stats[:lowest] ||= 111111111110
+      @computer_player_stats[:total_games] ||= 0
+      @computer_player_stats[:total_moves] ||= 0
+      @computer_player_stats[:average_moves] ||=0
+      @computer_player_stats[:average_moves] ||= 0
+
+      @computer_player_stats[:highest] = [@computer_player_stats[:highest], @turns_taken ].max
+      
+      @computer_player_stats[:lowest] = [@computer_player_stats[:lowest], @turns_taken ].min
+      @computer_player_stats[:total_games] += 1
+      @computer_player_stats[:total_moves] += @turns_taken
+      @computer_player_stats[:average_moves] = @computer_player_stats[:total_moves].to_f/ @computer_player_stats[:total_games]
+       
+      puts "Computer solved board in #{@turns_taken} moves. Highest: #{@computer_player_stats[:highest] } Lowest: #{@computer_player_stats[:lowest] } Average moves: #{sprintf('%0.2f',@computer_player_stats[:average_moves])} Total games: #{@computer_player_stats[:total_games]}"
+    else
       @game_grid.draw
       puts "Congratulations. Solution found in #{@turns_taken} moves."  
+    end
+    
   end 
 
   def choose_move(conversions)
@@ -319,7 +337,7 @@ end
 
 class SetOfGames
 
-  def initialize(number_of_games=14)
+  def initialize(number_of_games=1000)
     rg=RunGame.new
     number_of_games.times do 
       rg.new_game
