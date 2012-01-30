@@ -1,3 +1,6 @@
+require 'rainbow'
+
+
 class Cell
   attr_accessor :point, :color, :flooded
   
@@ -8,7 +11,7 @@ class Cell
     @flooded=false
   end 
   def to_s
-    color
+    @color.color(Grid::COLOR_HEX[@color])
   end 
   
   def owned?
@@ -23,14 +26,21 @@ class Cell
 end 
 
 class Grid
-	XDIM=5
-  YDIM=11
+	XDIM=14
+  YDIM=14
   COLORS=%w(% $ ! @ & *)
   NULLCOLOR='~'
   
+  COLOR_HEX={'%'=>sprintf("#%0.6x",(2**23)+rand(2**23)), 
+    '$'=>sprintf("#%0.6x",(2**23)+rand(2**23)),
+    '!'=> sprintf("#%0.6x",(2**23)+rand(2**23)) ,
+    '@'=> sprintf("#%0.6x",(2**23)+rand(2**23)), 
+    '&' => sprintf("#%0.6x",(2**23)+rand(2**23)),
+    '*' =>sprintf("#%0.6x",(2**23)+rand(2**23)),
+    '~' =>sprintf("#%0.6x",(2**23)+rand(2**23))}
+
   def get_adjacents(point_or_cell)
     point = point_or_cell.kind_of?(Cell) ? point_or_cell.point :  point_or_cell 
-    #point= self[point].point
     r=[]
     r << self[point.x,point.y-1]  # to the up 
     r << self[point.x+1,point.y]  # to the right 
@@ -47,6 +57,15 @@ class Grid
       cell      #remember the all_grid method assigns whatever is the outcome of this block back to the original cell
     end 
     owned
+  end 
+
+  def cells
+    owned=[]
+    all_grid do |cell,x,y|
+      owned << cell
+      cell      #remember the all_grid method assigns whatever is the outcome of this block back to the original cell
+    end 
+    owned 
   end 
 
   def change_color(color)
@@ -69,51 +88,14 @@ class Grid
     start_at.flooded=true
     #adjs=start_at.get_adjacents
     get_adjacents(start_at).each do |adj_cell|
-puts "cell: #{adj_cell} caller: #{caller}"
-puts "#{adj_cell==caller}"
       next if adj_cell==caller
       next if adj_cell.flooded
       if adj_cell.color == start_at.color 
-puts "b4 flood "
-puts "cell: #{adj_cell} caller: #{caller}"
-puts "#{adj_cell==caller}"
-          flood(start_at,adj_cell)
+        flood(start_at,adj_cell)
       end 
     end 
     
   end     
-
-    
-    #cell= self[ args ] ||  self[ 0 , 0]
-    #@starting_point=cell.point
-    #point_set << @starting_point
-
-    #adjs = get_adjacents(@starting_point).compact
-
-    
-
-#puts "***"
-#puts adjs.inspect
-#puts "***"
-
-
-    #adjs.each do |adj_cell|
-    
-      #if adj_cell.color == @starting_point.color then 
-        #if !adj_cell.owned?  
-          #adj_cell.owned=true
-          #ops = get_owned_cells(adj_cell).reject!{|cell| cell.owned } 
-          #point_set += ops
-        #else #it's a cell we already own so we need to explore its adjacents
-          
-        #end 
-        ##ops.reject!{|p| p==@starting_point }
-      #end   
-    #end 
-    
-    #point_set
-    ##returns an array? of points in the grid that the player "owns" 
-  #end 
 
   def last_color
     @last_color ||= @color_grid[0][0]
@@ -182,7 +164,6 @@ puts "#{adj_cell==caller}"
     item_space=" "
     
     ############################# begin drawing 
-    puts "Available colors: " + COLORS.inspect
     print top_margin
     print left_margin+corner
     XDIM.times do |x|
@@ -194,7 +175,8 @@ puts "#{adj_cell==caller}"
     YDIM.times do |y|
       print left_margin+left_border
       XDIM.times do |x|
-        print item_space + self[x,y].send(disp_type).to_s + item_space
+        e=self[x,y].send(disp_type).to_s
+        print item_space + e.color(COLOR_HEX[e]) + item_space
       end 
       print right_border+right_margin
       puts
@@ -233,52 +215,38 @@ class Point
   end 
 end 
 
-class Area
-  
-  def initialize(game_grid) 
-    @points = [Point.new]
-    @color = game_grid[0,0]
-    @grid = game_grid
-  end 
-  
-  def choose_color(color)
-    @points.each do |point|
-      
-    end 
-  end 
-  
-end 
 
 class RunGame
 
   def initialize
     @game_grid=Grid.new
     @game_grid.reset_grid
-    @area=Area.new(@game_grid)
+    Kernel.srand(1)
+    @last_color=''
+    @turns_taken=0
   end 
 
   def game_loop
     @game_grid.flood
 
     loop do
-    @game_grid.draw
-    @game_grid.draw(:owned)
-
-    
-    print "Enter a color: " 
-    c=gets
-    @game_grid.change_color c.chomp
-    @game_grid.flood
-#@game_grid.all_grid do |g,x,y|  
-  #puts " #{x} #{y} #{g} " + @game_grid.get_adjacents(g.point).inspect
-  #puts "the point as it says it is: "+g.point.to_s
-  #g 
-#end 
-    
-    
-    puts "owned points: "
-    puts @game_grid.owned_cells.inspect 
-    
+      @last_color=@game_grid.owned_cells.first.color
+      
+      #info line:
+      print "Owned: #{@game_grid.owned_cells.size} / #{Grid::XDIM*Grid::YDIM} | "  
+      print "Turns: #{@turns_taken} | "
+      puts;puts
+      @game_grid.draw
+  #    @game_grid.draw(:owned)
+   
+      ava=@game_grid.cells.uniq! || Grid::COLORS
+      puts "Available colors: " + ava.map(&:to_s).join(", ")
+      print("Enter a color:".color('#EFC238'))
+      c=gets
+      
+      @game_grid.change_color c.chomp
+      @game_grid.flood
+      @turns_taken+=1 if @game_grid.owned_cells.first.color != @last_color
     
     end 
 
