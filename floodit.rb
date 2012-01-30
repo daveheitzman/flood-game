@@ -30,7 +30,7 @@ class Grid
   COLORS=%w(% $ ! @ & *)
   NULLCOLOR='~'
   
-  @@game_number = 0
+  @@game_number = Random.new_seed
   
   @@rand=Random.new( @@game_number  )
   
@@ -176,6 +176,7 @@ class Grid
   
   def reset_grid
     @@game_number += 1
+    @@rand=Random.new(@@game_number)
     all_grid do |i,x,y|
       i=Cell.new
       i.color=COLORS[@@rand.rand(COLORS.size)]
@@ -211,6 +212,7 @@ class Grid
     print right_margin
     print "\n"
     YDIM.times do |y|
+      1.times do 
       print left_margin+left_border
       XDIM.times do |x|
         e=self[x,y].send(disp_type).to_s
@@ -218,6 +220,7 @@ class Grid
       end 
       print right_border+right_margin
       puts
+      end
     end 
     print left_margin+corner
     XDIM.times do |x|
@@ -256,17 +259,17 @@ end
 
 class RunGame
 
-  def initialize
+  def initialize(computer_player=false)
     @game_grid ||= Grid.new
     @computer_player_stats={}
-    new_game
+    @computer_player = computer_player # true
+    #new_game
   end 
 
   def new_game
     @game_grid.reset_grid
     @last_color=''
     @turns_taken=0
-    @computer_player=true
     @game_finished=false
     game_loop
   end 
@@ -289,7 +292,7 @@ class RunGame
         @game_grid.draw
         ava=Grid::COLORS
         puts "Available colors: " + ava.map{|e| e.to_s.color(Grid::COLOR_HEX[e])}.join(", ")
-        print("Enter a color:".color('#EFC238'))
+        print("(CTRL-C to exit)  Enter a color:".color('#EFC238'))
         c=gets
       else
         c=choose_move(pconvs)
@@ -301,7 +304,6 @@ class RunGame
       @game_finished = @game_grid.owned_cells.size==Grid::XDIM*Grid::YDIM
     
     end 
-    if @computer_player
       @computer_player_stats[:highest] ||=0
       
       @computer_player_stats[:lowest] ||= 111111111110
@@ -317,10 +319,12 @@ class RunGame
       @computer_player_stats[:total_moves] += @turns_taken
       @computer_player_stats[:average_moves] = @computer_player_stats[:total_moves].to_f/ @computer_player_stats[:total_games]
        
+    #@computer_player_stats is for human and computer players    
+    if @computer_player
       puts "Computer solved board in #{@turns_taken} moves. Highest: #{@computer_player_stats[:highest] } Lowest: #{@computer_player_stats[:lowest] } Average moves: #{sprintf('%0.2f',@computer_player_stats[:average_moves])} Total games: #{@computer_player_stats[:total_games]}"
     else
       @game_grid.draw
-      puts "Congratulations. Solution found in #{@turns_taken} moves."  
+      puts "Solution found in #{@turns_taken} moves. Highest: #{@computer_player_stats[:highest] } Lowest: #{@computer_player_stats[:lowest] } Average moves: #{sprintf('%0.2f',@computer_player_stats[:average_moves])} Total games: #{@computer_player_stats[:total_games]}"  
     end
     
   end 
@@ -338,7 +342,31 @@ end
 class SetOfGames
 
   def initialize(number_of_games=1000)
-    rg=RunGame.new
+    puts "***********************************************************************************"
+    puts "*                           Floodly (or something cute )                          *"
+    puts "*                a ruby implementation of Google's cool game floodit              *"
+    puts "*                       available if you sign up for google +                     *"
+    puts "*                                                                                 *"
+    puts "*                                by David Heitzman                                *"
+    puts "*                               http://aptifuge.com                               *"
+    puts "*                          http://github.com/daveheitzman                         *"
+    puts "*                                   CTRL-C to exit                                *"
+    puts "*                                                                                 *"
+    puts "***********************************************************************************"
+    puts
+    print "Computer or human ('c' or 'h') ? "
+    c=gets
+    cp= c.include?( 'c' ) ? true : false 
+    if cp
+      print "Number of games for computer to play ? "
+      c=gets
+      number_of_games=[c.to_i, 10000].min
+      number_of_games=[number_of_games, 0].max
+    else
+      number_of_games=2**30
+    end 
+    
+    rg = RunGame.new(cp)
     number_of_games.times do 
       rg.new_game
     end
