@@ -140,7 +140,6 @@ class Grid
   end 
   
   def initialize(xdim=XDIM,ydim=YDIM)
-    @@game_number += 1
     @starting_point_color = NULLCOLOR
     @starting_point = Point.new
     @color_grid = new_grid(xdim,ydim)
@@ -177,6 +176,7 @@ class Grid
   end 
   
   def reset_grid
+    @@game_number += 1
     all_grid do |i,x,y|
       i=Cell.new
       i.color=COLORS[@@rand.rand(COLORS.size)]
@@ -258,16 +258,23 @@ end
 class RunGame
 
   def initialize
-    @game_grid=Grid.new
+    @game_grid ||= Grid.new
+    new_game
+  end 
+
+  def new_game
     @game_grid.reset_grid
     @last_color=''
     @turns_taken=0
+    @computer_player=true
+    @game_finished=false
+    game_loop
   end 
-
+  
   def game_loop
     @game_grid.flood
 
-    loop do
+    while(!@game_finished) do
       @last_color=@game_grid.owned_cells.first.color
       puts
       #info line:
@@ -284,17 +291,42 @@ class RunGame
       ava=Grid::COLORS
       puts "Available colors: " + ava.map{|e| e.to_s.color(Grid::COLOR_HEX[e])}.join(", ")
       print("Enter a color:".color('#EFC238'))
-      c=gets
+      if @computer_player
+        c=choose_move(pconvs)
+      else 
+        c=gets
+      end 
       
       @game_grid.change_color c.chomp
       @game_grid.flood
       @turns_taken+=1 if @game_grid.owned_cells.first.color != @last_color
+      @game_finished = @game_grid.owned_cells.size==Grid::XDIM*Grid::YDIM
     
     end 
+      @game_grid.draw
+      puts "Congratulations. Solution found in #{@turns_taken} moves."  
+  end 
 
+  def choose_move(conversions)
+    choice = Grid::COLORS.first
+    highest=0  
+    conversions.each do |k,v|
+      if v > highest then highest=v;choice=k end 
+    end 
+    choice
+  end 
+end 
+
+class SetOfGames
+
+  def initialize(number_of_games=14)
+    rg=RunGame.new
+    number_of_games.times do 
+      rg.new_game
+    end
   end 
 
 end 
 
-rg=RunGame.new
-rg.game_loop
+
+SetOfGames.new
