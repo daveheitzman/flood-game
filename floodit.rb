@@ -31,8 +31,9 @@ class Grid
   COLORS=%w(% $ ! @ & *)
   NULLCOLOR='~'
   
+  @@game_number = 0
   
-  @@rand=Random.new( 1 )
+  @@rand=Random.new( @@game_number  )
   
   COLOR_HEX={'%'=>sprintf("#%0.6x",(2**23)+@@rand.rand(2**23) ) , 
     '$'=>sprintf("#%0.6x",(2**23)+@@rand.rand(2**23) ),
@@ -71,6 +72,36 @@ class Grid
     owned 
   end 
 
+  def pretend_flood(caller,start_at)
+    #this floods a cell but only in order to get a count of how many cells we would gain if we flooded on this cell
+    count = 1
+    start_at.flooded=true
+    #adjs=start_at.get_adjacents
+    get_adjacents(start_at).each do |adj_cell|
+      next if adj_cell==caller
+      next if adj_cell.flooded
+      if adj_cell.color == start_at.color 
+        count += pretend_flood(start_at,adj_cell)
+      end 
+    end 
+    count
+  end 
+
+  def possible_conversions
+    #outputs a hash : {color=>number of squares that would be gained by playing this color }
+    poss={}
+    COLORS.each do |c| poss[c]=0 end 
+    owned_cells.each do |owned_cell|
+      owned_cell.flooded=true
+      get_adjacents(owned_cell).each do |adj| 
+        poss[adj.color] += pretend_flood(owned_cell,adj) if !adj.flooded #use flooded marker so as not to count twice. we'll reset all when done 
+        adj.flooded=true
+      end  
+    end 
+    unflood_all
+    return poss
+  end 
+
   def change_color(color)
     return unless COLORS.include? color
     point_set=[]
@@ -78,12 +109,16 @@ class Grid
     owned.each do |cell|
       self[cell.point].color=color
     end 
+    unflood_all
+  end 
+  
+  def unflood_all
     all_grid do |cell,x,y|
       cell.flooded=false 
       cell      #remember the all_grid method assigns whatever is the outcome of this block back to the original cell
     end 
-
   end 
+  
   
   def flood(caller=nil, start_at=nil)
     start_at = start_at || self[0,0]
@@ -105,7 +140,7 @@ class Grid
   end 
   
   def initialize(xdim=XDIM,ydim=YDIM)
-  @@rand=Random.new(1)
+    @@game_number += 1
     @starting_point_color = NULLCOLOR
     @starting_point = Point.new
     @color_grid = new_grid(xdim,ydim)
@@ -238,12 +273,16 @@ class RunGame
       #info line:
       print "Owned: #{@game_grid.owned_cells.size}/#{Grid::XDIM*Grid::YDIM} | "  
       print "Turns: #{@turns_taken} | "
+      pconvs=@game_grid.possible_conversions
+      ava=Grid::COLORS
+      print ava.map{|e| e.to_s.color(Grid::COLOR_HEX[e]) + ":" + pconvs[e].to_s }.join("  ")
+
       puts
       @game_grid.draw
   #    @game_grid.draw(:owned)
    
-      ava=@game_grid.cells.uniq! || Grid::COLORS
-      puts "Available colors: " + ava.map(&:to_s).join(", ")
+      ava=Grid::COLORS
+      puts "Available colors: " + ava.map{|e| e.to_s.color(Grid::COLOR_HEX[e])}.join(", ")
       print("Enter a color:".color('#EFC238'))
       c=gets
       
