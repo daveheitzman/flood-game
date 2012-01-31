@@ -28,8 +28,9 @@ class Cell
 end 
 
 class Grid
-	XDIM=22
-  YDIM=22
+#on google it's 14x14
+	XDIM=14
+  YDIM=14
   COLORS=%w(% $ ! @ & *)
   NULLCOLOR='~'
   
@@ -114,6 +115,8 @@ class Grid
   end 
 
   def change_color(color)
+    #act of player choosing a color. changes color, changes ownership of new adjacent blocks w/ same color, returns new size of owned
+    #territory
     return unless COLORS.include? color
     point_set=[]
     owned=owned_cells
@@ -199,10 +202,7 @@ class Grid
     @color_grid[0][0].owned=true
   end 
   
-  def choose_color(c)
-    return if !COLORS.include? c
-    
-  end 
+  
   
   def draw(disp_type=:color)
     left_margin="   "
@@ -305,7 +305,9 @@ class RunGame
         ava=Grid::COLORS
         print ava.map{|e| e.to_s.color(Grid::COLOR_HEX[e]) + ":" + pconvs[e].to_s }.join("  ")
         puts
-        @game_grid=@game_grid.clone
+        #@game_grid=@game_grid.clone
+        c=choose_move pconvs
+        
         @game_grid.draw
         ava=Grid::COLORS
         puts "Available colors: " + ava.map{|e| e.to_s.color(Grid::COLOR_HEX[e])}.join(", ")
@@ -348,26 +350,51 @@ class RunGame
 
   def look_ahead(grid,s='')
     #input: a string representing a sequence of moves to be made against the current grid
-    #output: a number of owned cells after move s 
-    if grid == @game_grid then grid = @game_grid.clone end 
-    return grid.owned_cells if s==''
+    #output: number of cells you'll own after playing sequence s 
+    owned = grid.owned_cells.size
+#puts "owned = grid.owned_cells.size " + owned.to_s + "  "
+    return owned if s.size == 0 
+    grid = grid.clone  
+    grid.change_color( s[0] )
+    grid.flood
+    cc=grid.owned_cells.size
+    if cc > owned  
+      la=look_ahead(grid,s[1..-1] )
+      return la
+    else 
+      return owned
+    end 
+#puts "after clone owned = grid.owned_cells.size " + owned.to_s 
+#puts "grid.change_color( s[0] )                 " + cc.to_s 
+#puts "after look_ahead(grid,s[1..-1] )          " + la.to_s     
     
-    
-    
-  
   end 
-  def choose_move(conversions)
-    choice = nil 
-    grid_clones={}
-    #Grid::COLORS.each do |play_color|
-      #1 duplicate grid for each color that does not have 0 connections 
-      conversions.each do |k,v|
-        if v > 0 then
-          highest = look_ahead( @game_grid,'')
-          choice = k if highest > 0 
-        end 
-      end      
+
+  #def choose_move(conversions)
+    #choice = Grid::COLORS.first
+
+    #highest=0  
+    #conversions.each do |k,v|
+      #if v > highest then highest=v;choice=k end 
     #end 
+    #choice
+  #end 
+
+  
+  def choose_move(conversions)
+    look_ahead_moves = 6
+    choice = nil
+    highest=0 
+    seq=''
+    move_chains=Grid::COLORS.permutation(look_ahead_moves).to_a
+    #grid_clones={}
+    move_chains.each do |mc|
+      #look_ahead(mc.join)
+        la=look_ahead( @game_grid, mc.join ) 
+#puts "look_ahead( @game_grid,'#{mc.join}'): "+la.to_s+" "
+        if  la > highest then highest=la; choice=mc[0]; seq=mc.join+":"+highest.to_s end  
+    end 
+puts "best move (#{look_ahead_moves}): "+seq    
     choice
   end 
 
