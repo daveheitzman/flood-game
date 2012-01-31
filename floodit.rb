@@ -22,11 +22,14 @@ class Cell
   def owned
     owned? ? "+" : "-"
   end 
+  def initialize_copy(orig)
+    @point = orig.point.clone
+  end 
 end 
 
 class Grid
-	XDIM=14
-  YDIM=14
+	XDIM=22
+  YDIM=22
   COLORS=%w(% $ ! @ & *)
   NULLCOLOR='~'
   
@@ -71,6 +74,15 @@ class Grid
     owned 
   end 
 
+  def copy_grid
+    newg=new_grid
+    all_grid do |cell,x,y|
+      newg[x][y]=cell.clone
+      cell
+    end 
+    newg
+  end 
+  
   def pretend_flood(caller,start_at)
     #this floods a cell but only in order to get a count of how many cells we would gain if we flooded on this cell
     count = 1
@@ -233,7 +245,11 @@ class Grid
   
   def create
 	end 
-
+  
+  def initialize_copy(orig)
+    @last_color=orig.last_color.clone
+    @color_grid=orig.copy_grid
+  end 
 end 
 
 class Point 
@@ -289,6 +305,7 @@ class RunGame
         ava=Grid::COLORS
         print ava.map{|e| e.to_s.color(Grid::COLOR_HEX[e]) + ":" + pconvs[e].to_s }.join("  ")
         puts
+        @game_grid=@game_grid.clone
         @game_grid.draw
         ava=Grid::COLORS
         puts "Available colors: " + ava.map{|e| e.to_s.color(Grid::COLOR_HEX[e])}.join(", ")
@@ -331,12 +348,14 @@ class RunGame
 
   def choose_move(conversions)
     choice = Grid::COLORS.first
+
     highest=0  
     conversions.each do |k,v|
       if v > highest then highest=v;choice=k end 
     end 
     choice
   end 
+
 end 
 
 class SetOfGames
