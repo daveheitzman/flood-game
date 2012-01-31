@@ -346,13 +346,28 @@ class RunGame
     
   end 
 
+  def look_ahead(grid,s='')
+    #input: a string representing a sequence of moves to be made against the current grid
+    #output: a number of owned cells after move s 
+    if grid == @game_grid then grid = @game_grid.clone end 
+    return grid.owned_cells if s==''
+    
+    
+    
+  
+  end 
   def choose_move(conversions)
-    choice = Grid::COLORS.first
-
-    highest=0  
-    conversions.each do |k,v|
-      if v > highest then highest=v;choice=k end 
-    end 
+    choice = nil 
+    grid_clones={}
+    #Grid::COLORS.each do |play_color|
+      #1 duplicate grid for each color that does not have 0 connections 
+      conversions.each do |k,v|
+        if v > 0 then
+          highest = look_ahead( @game_grid,'')
+          choice = k if highest > 0 
+        end 
+      end      
+    #end 
     choice
   end 
 
