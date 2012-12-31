@@ -264,15 +264,9 @@ class Grid
 end 
 
 class Point 
-  def x
-    @x
-  end 
-  def y
-    @y
-  end 
-  def to_s
-    "#{@x},#{@y}"
-  end 
+  def x  ; @x  end 
+  def y   ; @y  end 
+  def to_s ;    "#{@x},#{@y}"  end 
   def ==(p)
     p.kind_of?( self.class ) ? (p.x==self.x && p.y==self.y) : false   
   end 
@@ -392,7 +386,7 @@ class RunGame
 
   
   def choose_move(conversions)
-    look_ahead_moves = 6
+    look_ahead_moves = 3
     choice = nil
     highest=0 
     seq=''

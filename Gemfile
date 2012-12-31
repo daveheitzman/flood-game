@@ -3,3 +3,4 @@ source "http://gems.github.com"
 
 gem 'rainbow'
 gem 'rspec'
+gem 'luck'
